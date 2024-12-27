@@ -35,14 +35,14 @@ module "aws-iam-identity-center" {
   // Create permissions sets backed by AWS managed policies
   permission_sets = {
     AdministratorAccess = {
-      description          = "Provides AWS full access permissions.",
-      session_duration     = "PT4H", // how long until session expires - this means 4 hours. max is 12 hours
-      aws_managed_policies = ["arn:aws:iam::aws:policy/AdministratorAccess"]
+      description          = "Provides specified AWS permissions."
+      session_duration     = "PT4H" // how long until session expires - this means 4 hours. max is 12 hours
+      aws_managed_policies = ["arn:aws:iam::YOUR_ACCOUNT_ID:policy/YOUR_CUSTOM_POLICY"]
       tags                 = { ManagedBy = "Terraform" }
     },
     ViewOnlyAccess = {
-      description          = "Provides AWS view only permissions.",
-      session_duration     = "PT3H", // how long until session expires - this means 3 hours. max is 12 hours
+      description          = "Provides specific AWS view permissions." 
+      session_duration     = "PT3H" // how long until session expires - this means 3 hours. max is 12 hours
       aws_managed_policies = ["arn:aws:iam::aws:policy/job-function/ViewOnlyAccess"]
       tags                 = { ManagedBy = "Terraform" }
     },
@@ -125,4 +125,26 @@ module "aws-iam-identity-center" {
     }
   }
 
+}
+
+resource "aws_iam_policy" "your_custom_policy" {
+  name   = "YourCustomPolicy"
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeInstances",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:ec2:YOUR_REGION:YOUR_ACCOUNT_ID:instance/YOUR_INSTANCE_ID",
+        "arn:aws:s3:::YOUR_BUCKET_NAME"
+      ]
+    }
+  ]
+}
+POLICY
 }

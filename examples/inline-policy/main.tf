@@ -1,24 +1,20 @@
 data "aws_organizations_organization" "org" {}
 
-# Create Inline Policy
-# IMPORTANT - This policy has an explicit deny. This is used as an example only.
-# Ensure you understand the impact of this policy before deploying.
 data "aws_iam_policy_document" "restrictAccessInlinePolicy" {
   statement {
     sid = "Restrict"
     actions = [
-      "*",
+      "service:YOUR_REQUIRED_SERVICE_ACTION"
     ]
     effect = "Deny"
     resources = [
-      "*",
+      "arn:aws:YOUR_SERVICE:YOUR_REGION:YOUR_ACCOUNT_ID:YOUR_RESOURCE"
     ]
     condition {
       test     = "NotIpAddress"
       variable = "aws:SourceIp"
       values = [
-        // replace with your own IP address
-        "0.0.0.0/0",
+        "YOUR_ALLOWED_IP_RANGE"
       ]
     }
     condition {
@@ -38,17 +34,8 @@ data "aws_iam_policy_document" "restrictAccessInlinePolicy" {
   }
 }
 
-# locals {
-#   active_accounts = [for a in data.aws_organizations_organization.org.accounts : a if a.status == "ACTIVE"]
-#   tags = {
-#     "Owner" = "SRE Team"
-#   }
-# }
-
-
 module "aws-iam-identity-center" {
   source = "../.." // local example
-  # source = "aws-ia/iam-identity-center/aws" // remote example
 
   existing_sso_groups = {
     AWSControlTowerAdmins : {
@@ -91,24 +78,24 @@ module "aws-iam-identity-center" {
 
   permission_sets = {
     AdministratorAccess = {
-      description          = "Provides full access to AWS services and resources",
-      session_duration     = "PT3H",
+      description          = "Provides access to necessary AWS services and resources"
+      session_duration     = "PT3H"
       aws_managed_policies = ["arn:aws:iam::aws:policy/AdministratorAccess"]
       inline_policy        = data.aws_iam_policy_document.restrictAccessInlinePolicy.json
       tags                 = { ManagedBy = "Terraform" }
     },
     ViewOnlyAccess = {
-      description          = "This policy grants permissions to view resources and basic metadata across all AWS services",
-      session_duration     = "PT3H",
-      aws_managed_policies = ["arn:aws:iam::aws:policy/job-function/ViewOnlyAccess"]
-      managed_policy_arn   = "arn:aws:iam::aws:policy/job-function/ViewOnlyAccess"
-
-      permissions_boundary = {
+      description           = "Grants permissions to view resources and metadata across AWS services"
+      session_duration      = "PT3H"
+      aws_managed_policies  = ["arn:aws:iam::aws:policy/job-function/ViewOnlyAccess"]
+      managed_policy_arn    = "arn:aws:iam::aws:policy/job-function/ViewOnlyAccess"
+      permissions_boundary  = {
         managed_policy_arn = "arn:aws:iam::aws:policy/job-function/ViewOnlyAccess"
       }
       tags = { ManagedBy = "Terraform" }
     },
   }
+  
   account_assignments = {
     Admin : {
       principal_name = "Admin"

@@ -14,23 +14,21 @@ module "aws-iam-identity-center" {
     },
   }
 
-
   # Create permissions sets backed by AWS managed policies
   permission_sets = {
     AdministratorAccess = {
-      description          = "Provides AWS full access permissions.",
-      session_duration     = "PT4H", // how long until session expires - this means 4 hours. max is 12 hours
-      aws_managed_policies = ["arn:aws:iam::aws:policy/AdministratorAccess"]
+      description          = "Provides AWS admin permissions with restricted privileges."
+      session_duration     = "PT4H" // how long until session expires - this means 4 hours. max is 12 hours
+      aws_managed_policies = []  
       tags                 = { ManagedBy = "Terraform" }
     },
     ViewOnlyAccess = {
-      description          = "Provides AWS view only permissions.",
-      session_duration     = "PT3H", // how long until session expires - this means 3 hours. max is 12 hours
+      description          = "Provides AWS view only permissions."
+      session_duration     = "PT3H" // how long until session expires - this means 3 hours. max is 12 hours
       aws_managed_policies = ["arn:aws:iam::aws:policy/job-function/ViewOnlyAccess"]
       tags                 = { ManagedBy = "Terraform" }
     },
   }
-
 
   # Assign users/groups access to accounts with the specified permissions
   # Ensure these User/Groups already exist in your AWS account
@@ -39,7 +37,7 @@ module "aws-iam-identity-center" {
       principal_name  = "testgroup"
       principal_type  = "GROUP"
       principal_idp   = "EXTERNAL"
-      permission_sets = ["AdministratorAccess", "ViewOnlyAccess", ]
+      permission_sets = ["ViewOnlyAccess"]
       account_ids = [              // account(s) the user will have access to. Permissions they will have in account are above line
         local.account1_account_id, // locals are used to allow for global changes to multiple account assignments
         # local.account2_account_id, // if hard coding the account ids, you would need to change them in every place you want to change
@@ -60,5 +58,19 @@ module "aws-iam-identity-center" {
       ]
     },
   }
+}
 
+resource "aws_iam_policy" "custom_admin_policy" {
+  name        = "custom_admin_policy"
+  description = "Custom policy granting specific admin permissions."
+  policy      = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect   = "Allow",
+        Action   = "iam:YOUR_REQUIRED_ACTION",
+        Resource = "arn:aws:iam::YOUR_ACCOUNT_ID:YOUR_RESOURCE"
+      }
+    ]
+  })
 }
